@@ -1,5 +1,7 @@
 # tushare-local-mcp
 
+[中文文档](README.zh-CN.md)
+
 Local MCP server for exposing [Tushare](https://tushare.pro/) market and
 financial data tools to MCP clients.
 
