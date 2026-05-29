@@ -150,13 +150,14 @@ TUSHARE_MCP_TRANSPORT=stdio uv run tushare-local-mcp
 ### 行情类
 
 - `get_realtime(ts_code: str) -> dict`
-- `get_rt_min(ts_code: str, freq: int = 1, limit: int = 1000) -> list[dict]`
+- `get_rt_min(ts_code: str, freq: str = "1MIN", limit: int = 1000) -> list[dict]`
 - `get_daily(ts_code: str, bars: int = 120) -> list[dict]`
 - `get_index_realtime(index_code: str) -> dict`
 - `get_index_daily(index_code: str, bars: int = 60) -> list[dict]`
 
-`get_rt_min` 用于获取 A 股实时分钟数据，`freq` 支持 `1` 到 `60` 分钟，
-`limit` 单次最多 `1000` 行。`ts_code` 支持逗号分隔的多个股票代码。
+`get_rt_min` 用于获取 A 股实时分钟数据，`freq` 支持 `"1MIN"`、`"5MIN"`、
+`"15MIN"`、`"30MIN"`、`"60MIN"`，`limit` 单次最多 `1000` 行。`ts_code`
+支持逗号分隔的多个股票代码。
 
 ### 资金类
 
@@ -174,7 +175,7 @@ TUSHARE_MCP_TRANSPORT=stdio uv run tushare-local-mcp
 
 ### 兼容工具
 
-- `get_stock_daily(ts_code: str, start_date: str | None = None, end_date: str | None = None) -> dict`
+- `get_stock_daily(ts_code: str, start_date: str | None = None, end_date: str | None = None) -> list[dict]`
 
 ## 开发
 

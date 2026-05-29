@@ -49,18 +49,13 @@ async def test_stock_daily_delegates_to_client_factory():
         client_factory=lambda: FakeClient(),
     )
 
-    assert result == {
-        "ts_code": "000001.SZ",
-        "start_date": "20240101",
-        "end_date": "20240131",
-        "rows": [
-            {
-                "ts_code": "000001.SZ",
-                "trade_date": "20240101",
-                "close": 10.5,
-            }
-        ],
-    }
+    assert result == [
+        {
+            "ts_code": "000001.SZ",
+            "trade_date": "20240101",
+            "close": 10.5,
+        }
+    ]
 
 
 @pytest.mark.asyncio
@@ -71,6 +66,9 @@ async def test_market_tools_delegate_to_client_methods():
 
         async def rt_min(self, ts_code, freq, limit):
             return [{"ts_code": ts_code, "freq": freq, "limit": limit}]
+
+        async def index_realtime(self, index_code):
+            return {"ts_code": index_code, "price": 4037.95}
 
         async def daily_bars(self, ts_code, bars):
             return [{"ts_code": ts_code, "bars": bars}]
@@ -89,13 +87,13 @@ async def test_market_tools_delegate_to_client_methods():
     ]
     assert await get_index_realtime("000001.SH", client_factory=lambda: fake) == {
         "ts_code": "000001.SH",
-        "price": 12.3,
+        "price": 4037.95,
     }
     assert await get_index_daily("000001.SH", client_factory=lambda: fake) == [
         {"ts_code": "000001.SH", "bars": 60}
     ]
     assert await get_rt_min("000001.SZ", client_factory=lambda: fake) == [
-        {"ts_code": "000001.SZ", "freq": 1, "limit": 1000}
+        {"ts_code": "000001.SZ", "freq": "1MIN", "limit": 1000}
     ]
 
 
@@ -107,12 +105,14 @@ async def test_rt_min_accepts_frequency_and_limit():
 
     result = await get_rt_min(
         "000001.SZ,600000.SH",
-        freq=5,
+        freq="5MIN",
         limit=120,
         client_factory=lambda: FakeClient(),
     )
 
-    assert result == [{"ts_code": "000001.SZ,600000.SH", "freq": 5, "limit": 120}]
+    assert result == [
+        {"ts_code": "000001.SZ,600000.SH", "freq": "5MIN", "limit": 120}
+    ]
 
 
 @pytest.mark.asyncio
@@ -190,8 +190,8 @@ async def test_rt_min_rejects_invalid_frequency_and_limit():
         async def rt_min(self, ts_code, freq, limit):
             return []
 
-    with pytest.raises(ValueError, match="freq must be between 1 and 60"):
-        await get_rt_min("000001.SZ", freq=61, client_factory=lambda: FakeClient())
+    with pytest.raises(ValueError, match="freq must be one of"):
+        await get_rt_min("000001.SZ", freq="2MIN", client_factory=lambda: FakeClient())
 
     with pytest.raises(ValueError, match="limit must be between 1 and 1000"):
         await get_rt_min("000001.SZ", limit=1001, client_factory=lambda: FakeClient())

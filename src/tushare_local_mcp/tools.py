@@ -20,10 +20,13 @@ class DailyClient(Protocol):
     async def realtime(self, ts_code: str) -> dict[str, Any]:
         pass
 
+    async def index_realtime(self, index_code: str) -> dict[str, Any]:
+        pass
+
     async def rt_min(
         self,
         ts_code: str,
-        freq: int,
+        freq: str,
         limit: int,
     ) -> list[dict[str, Any]]:
         pass
@@ -86,22 +89,24 @@ def _require_between(value: int, field_name: str, minimum: int, maximum: int) ->
     return value
 
 
+def _require_choice(value: str, field_name: str, choices: set[str]) -> str:
+    normalized = value.strip().upper()
+    if normalized not in choices:
+        allowed = ", ".join(sorted(choices))
+        raise ValueError(f"{field_name} must be one of: {allowed}")
+    return normalized
+
+
 async def stock_daily(
     ts_code: str,
     start_date: str | None = None,
     end_date: str | None = None,
     *,
     client_factory: Callable[[], DailyClient],
-) -> dict[str, Any]:
+) -> list[dict[str, Any]]:
     client = client_factory()
     ts_code = _require_code(ts_code, "ts_code")
-    rows = await client.daily(ts_code, start_date, end_date)
-    return {
-        "ts_code": ts_code,
-        "start_date": start_date,
-        "end_date": end_date,
-        "rows": rows,
-    }
+    return await client.daily(ts_code, start_date, end_date)
 
 
 async def get_realtime(
@@ -115,13 +120,13 @@ async def get_realtime(
 
 async def get_rt_min(
     ts_code: str,
-    freq: int = 1,
+    freq: str = "1MIN",
     limit: int = 1000,
     *,
     client_factory: Callable[[], DailyClient],
 ) -> list[dict[str, Any]]:
     ts_code = _require_code(ts_code, "ts_code")
-    freq = _require_between(freq, "freq", 1, 60)
+    freq = _require_choice(freq, "freq", RT_MIN_FREQS)
     limit = _require_between(limit, "limit", 1, 1000)
     return await client_factory().rt_min(ts_code, freq, limit)
 
@@ -143,7 +148,7 @@ async def get_index_realtime(
     client_factory: Callable[[], DailyClient],
 ) -> dict[str, Any]:
     index_code = _require_code(index_code, "index_code")
-    return await client_factory().realtime(index_code)
+    return await client_factory().index_realtime(index_code)
 
 
 async def get_index_daily(
@@ -219,6 +224,8 @@ GET_FINA_INDICATOR_IMPL = get_fina_indicator
 GET_INCOME_IMPL = get_income
 GET_STOCK_BASIC_IMPL = get_stock_basic
 
+RT_MIN_FREQS = {"1MIN", "5MIN", "15MIN", "30MIN", "60MIN"}
+
 
 def register_tools(
     mcp: FastMCP,
@@ -242,7 +249,7 @@ def register_tools(
     @mcp.tool()
     async def get_rt_min(
         ts_code: str,
-        freq: int = 1,
+        freq: str = "1MIN",
         limit: int = 1000,
     ) -> list[dict[str, Any]]:
         """Fetch realtime minute bars for A-share stocks, from 1min to 60min."""
@@ -339,7 +346,7 @@ def register_tools(
         ts_code: str,
         start_date: str | None = None,
         end_date: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> list[dict[str, Any]]:
         """Fetch daily stock market data from Tushare by ts_code."""
         return await stock_daily(
             ts_code,
