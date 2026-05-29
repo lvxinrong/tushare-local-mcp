@@ -46,6 +46,29 @@ uv run tushare-local-mcp
 http://127.0.0.1:8000/mcp
 ```
 
+## 局域网访问
+
+如果要让同一个局域网里的其他机器访问，把服务绑定到所有网卡：
+
+```bash
+TUSHARE_MCP_HOST=0.0.0.0 uv run tushare-local-mcp
+```
+
+或者写进 `.env`：
+
+```bash
+TUSHARE_MCP_HOST=0.0.0.0
+```
+
+其他客户端连接：
+
+```text
+http://你的局域网IP:8000/mcp
+```
+
+如果只允许当前机器访问，继续使用默认的 `127.0.0.1`。如果是在 macOS
+或 Linux 服务器上运行，记得确认防火墙允许 `8000` 端口的入站 TCP 连接。
+
 ## Docker 部署
 
 适合部署到服务器长期运行：
@@ -109,7 +132,7 @@ PY
 | `TUSHARE_TOKEN` | 空 | Tushare API token |
 | `TUSHARE_MCP_NAME` | `tushare-local-mcp` | MCP 服务名称 |
 | `TUSHARE_MCP_TRANSPORT` | `streamable-http` | MCP 传输方式 |
-| `TUSHARE_MCP_HOST` | `127.0.0.1` | HTTP 绑定地址 |
+| `TUSHARE_MCP_HOST` | `127.0.0.1` | HTTP 绑定地址。局域网访问用 `0.0.0.0` |
 | `TUSHARE_MCP_PORT` | `8000` | HTTP 端口 |
 
 如果要临时尝试 stdio：

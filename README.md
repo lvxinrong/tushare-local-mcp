@@ -48,6 +48,31 @@ The default MCP endpoint is:
 http://127.0.0.1:8000/mcp
 ```
 
+## LAN Access
+
+For access from other devices on the same LAN, bind the server to all network
+interfaces:
+
+```bash
+TUSHARE_MCP_HOST=0.0.0.0 uv run tushare-local-mcp
+```
+
+Or set it in `.env`:
+
+```bash
+TUSHARE_MCP_HOST=0.0.0.0
+```
+
+Then connect clients to:
+
+```text
+http://YOUR_LAN_IP:8000/mcp
+```
+
+Keep `127.0.0.1` if only the current machine should access the service. On
+macOS or Linux servers, make sure the firewall allows inbound TCP traffic on
+port `8000`.
+
 ## Docker Deployment
 
 For a server deployment:
@@ -114,7 +139,7 @@ variables.
 | `TUSHARE_TOKEN` | empty | Tushare API token |
 | `TUSHARE_MCP_NAME` | `tushare-local-mcp` | MCP server name |
 | `TUSHARE_MCP_TRANSPORT` | `streamable-http` | MCP transport |
-| `TUSHARE_MCP_HOST` | `127.0.0.1` | HTTP bind host |
+| `TUSHARE_MCP_HOST` | `127.0.0.1` | HTTP bind host. Use `0.0.0.0` for LAN access |
 | `TUSHARE_MCP_PORT` | `8000` | HTTP bind port |
 
 For stdio experiments:
