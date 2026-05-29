@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import math
 from collections.abc import Callable
+from datetime import date, timedelta
 from typing import Any
 
 
@@ -55,12 +56,13 @@ class TushareClient:
         return [self._format_moneyflow(row) for row in rows]
 
     async def hsgt_flow(self, days: int) -> list[dict[str, Any]]:
+        end_date, start_date = _date_window(days)
         rows = await self._safe_list(
             self._query_sync,
             "moneyflow_hsgt",
-            {"limit": days},
+            {"start_date": start_date, "end_date": end_date},
         )
-        return [self._format_hsgt_flow(row) for row in rows]
+        return [self._format_hsgt_flow(row) for row in rows[:days]]
 
     async def fina_indicator(
         self,
@@ -137,18 +139,20 @@ class TushareClient:
         rows: list[dict[str, Any]] = []
 
         if hasattr(pro, "rt_k"):
-            rows = self._records(pro.rt_k(ts_code))
+            rows = self._try_records(lambda: pro.rt_k(ts_code=ts_code))
 
         if not rows and hasattr(pro, "daily"):
-            rows = self._records(pro.daily(ts_code=ts_code, limit=1))
+            rows = self._try_records(lambda: pro.daily(ts_code=ts_code, limit=1))
 
         if not rows:
-            rows = self._tx_get_realtime(ts_code)
+            rows = self._try_records(lambda: self._tx_get_realtime(ts_code))
 
         if not rows:
             return {}
 
-        daily_basic = self._first_record(pro.daily_basic(ts_code=ts_code, limit=1))
+        daily_basic = self._try_first_record(
+            lambda: pro.daily_basic(ts_code=ts_code, limit=1)
+        )
         return self._format_realtime(rows[0], daily_basic)
 
     def _index_realtime_sync(self, index_code: str) -> dict[str, Any]:
@@ -160,10 +164,12 @@ class TushareClient:
         rows: list[dict[str, Any]] = []
 
         if hasattr(pro, "rt_idx_k"):
-            rows = self._records(pro.rt_idx_k(index_code))
+            rows = self._try_records(lambda: pro.rt_idx_k(ts_code=index_code))
 
         if not rows and hasattr(pro, "index_daily"):
-            rows = self._records(pro.index_daily(ts_code=index_code, limit=1))
+            rows = self._try_records(
+                lambda: pro.index_daily(ts_code=index_code, limit=1)
+            )
 
         return self._format_index_realtime(rows[0]) if rows else {}
 
@@ -214,12 +220,25 @@ class TushareClient:
             return self._records(ts.realtime_quote(ts_code))
 
     @staticmethod
+    def _try_records(fetch: Callable[[], Any]) -> list[dict[str, Any]]:
+        try:
+            result = fetch()
+        except Exception:
+            return []
+        return TushareClient._records(result)
+
+    @staticmethod
+    def _try_first_record(fetch: Callable[[], Any]) -> dict[str, Any]:
+        rows = TushareClient._try_records(fetch)
+        return rows[0] if rows else {}
+
+    @staticmethod
     def _format_realtime(
         row: dict[str, Any],
         daily_basic: dict[str, Any],
     ) -> dict[str, Any]:
         ts_code = _value(row, "ts_code", "TS_CODE", default="")
-        price = _number(_value(row, "price", "PRICE"))
+        price = _number(_value(row, "price", "PRICE", "close", "CLOSE"))
         prev_close = _number(_value(row, "pre_close", "PRE_CLOSE"))
         high = _number(_value(row, "high", "HIGH"))
         low = _number(_value(row, "low", "LOW"))
@@ -384,3 +403,9 @@ def _pct_change(value: int | float, base: int | float) -> int | float:
 
 def _is_missing(value: Any) -> bool:
     return value is None or (isinstance(value, float) and math.isnan(value))
+
+
+def _date_window(days: int) -> tuple[str, str]:
+    end = date.today()
+    start = end - timedelta(days=max(days * 3, 30))
+    return end.strftime("%Y%m%d"), start.strftime("%Y%m%d")

@@ -91,13 +91,13 @@ class FakePro:
             )
         return pd.DataFrame()
 
-    def rt_k(self, ts_code):
+    def rt_k(self, *, ts_code):
         return pd.DataFrame(
             [
                 {
                     "NAME": "阳光电源",
                     "TS_CODE": ts_code,
-                    "PRICE": 177.99,
+                    "close": 177.99,
                     "PRE_CLOSE": 190.09,
                     "OPEN": 190.14,
                     "HIGH": 190.63,
@@ -108,7 +108,7 @@ class FakePro:
             ]
         )
 
-    def rt_idx_k(self, ts_code):
+    def rt_idx_k(self, *, ts_code):
         return pd.DataFrame(
             [
                 {
@@ -150,7 +150,7 @@ class FakePro:
             ]
         )
 
-    def index_daily(self, ts_code, limit=None):
+    def index_daily(self, ts_code, limit=None, start_date=None, end_date=None):
         return pd.DataFrame(
             [
                 {
@@ -203,6 +203,25 @@ async def test_index_realtime_returns_analysis_ready_quote(fake_pro):
     assert result == {
         "price": 4037.95,
         "chg_pct": -2.11,
+        "high": 4158.69,
+        "low": 4010.12,
+    }
+
+
+@pytest.mark.asyncio
+async def test_index_realtime_falls_back_to_index_daily(monkeypatch):
+    class FallbackPro(FakePro):
+        def rt_idx_k(self, *, ts_code):
+            raise RuntimeError("frequency limited")
+
+    pro = FallbackPro()
+    monkeypatch.setattr(ts, "pro_api", lambda token: pro)
+
+    result = await TushareClient("secret-token").index_realtime("000001.SH")
+
+    assert result == {
+        "price": 4037.95,
+        "chg_pct": 0,
         "high": 4158.69,
         "low": 4010.12,
     }
@@ -273,6 +292,11 @@ async def test_hsgt_flow_returns_analysis_ready_rows(fake_pro):
             "north_money": 190.0,
         }
     ]
+    api_name, params = fake_pro.calls[-1]
+    assert api_name == "moneyflow_hsgt"
+    assert "start_date" in params
+    assert "end_date" in params
+    assert "limit" not in params
 
 
 @pytest.mark.asyncio
