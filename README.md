@@ -46,6 +46,25 @@ The default MCP endpoint is:
 http://127.0.0.1:8000/mcp
 ```
 
+## Docker Deployment
+
+For a server deployment:
+
+```bash
+cp .env.example .env
+# edit .env and set TUSHARE_TOKEN
+docker compose up -d --build
+```
+
+The container binds to `0.0.0.0:8000`, so other machines can reach:
+
+```text
+http://SERVER_IP:8000/mcp
+```
+
+See [docs/deploy.md](docs/deploy.md) for logs, updates, shutdown, and security
+notes.
+
 ## Verify the MCP Server
 
 Keep the server running, then open another terminal:

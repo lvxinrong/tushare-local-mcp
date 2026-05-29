@@ -1,0 +1,15 @@
+services:
+  tushare-local-mcp:
+    build:
+      context: .
+    image: tushare-local-mcp:latest
+    container_name: tushare-local-mcp
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      TUSHARE_MCP_HOST: 0.0.0.0
+      TUSHARE_MCP_PORT: 8000
+      TUSHARE_MCP_TRANSPORT: streamable-http
+    ports:
+      - "8000:8000"
