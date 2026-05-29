@@ -19,6 +19,7 @@ async def test_create_mcp_registers_tushare_tools():
     assert {
         "health",
         "get_realtime",
+        "get_rt_min",
         "get_daily",
         "get_index_realtime",
         "get_index_daily",

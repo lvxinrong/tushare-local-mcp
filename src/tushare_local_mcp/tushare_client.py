@@ -19,6 +19,18 @@ class TushareClient:
     async def realtime(self, ts_code: str) -> dict[str, Any]:
         return await asyncio.to_thread(self._realtime_sync, ts_code)
 
+    async def rt_min(
+        self,
+        ts_code: str,
+        freq: int,
+        limit: int,
+    ) -> list[dict[str, Any]]:
+        return await asyncio.to_thread(
+            self._query_sync,
+            "rt_min",
+            {"ts_code": ts_code, "freq": freq, "limit": limit},
+        )
+
     async def daily_bars(self, ts_code: str, bars: int) -> list[dict[str, Any]]:
         return await asyncio.to_thread(self._pro_bar_sync, ts_code, bars, "E")
 

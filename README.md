@@ -132,9 +132,14 @@ TUSHARE_MCP_TRANSPORT=stdio uv run tushare-local-mcp
 ### Market Data
 
 - `get_realtime(ts_code: str) -> dict`
+- `get_rt_min(ts_code: str, freq: int = 1, limit: int = 1000) -> list[dict]`
 - `get_daily(ts_code: str, bars: int = 120) -> list[dict]`
 - `get_index_realtime(index_code: str) -> dict`
 - `get_index_daily(index_code: str, bars: int = 60) -> list[dict]`
+
+`get_rt_min` fetches A-share realtime minute bars. `freq` supports `1` to `60`
+minutes, and `limit` is capped at `1000` rows per request. `ts_code` can contain
+multiple comma-separated stock codes.
 
 ### Moneyflow
 

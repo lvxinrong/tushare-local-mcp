@@ -67,6 +67,14 @@ async def test_pro_query_methods_use_expected_api_names(monkeypatch):
     assert await client.moneyflow("000001.SZ", 10) == [
         {"api_name": "moneyflow", "ts_code": "000001.SZ", "limit": 10}
     ]
+    assert await client.rt_min("000001.SZ,600000.SH", 5, 120) == [
+        {
+            "api_name": "rt_min",
+            "ts_code": "000001.SZ,600000.SH",
+            "freq": 5,
+            "limit": 120,
+        }
+    ]
     assert await client.hsgt_flow(10) == [
         {"api_name": "moneyflow_hsgt", "limit": 10}
     ]
@@ -84,6 +92,7 @@ async def test_pro_query_methods_use_expected_api_names(monkeypatch):
 
     assert calls == [
         ("moneyflow", {"ts_code": "000001.SZ", "limit": 10}),
+        ("rt_min", {"ts_code": "000001.SZ,600000.SH", "freq": 5, "limit": 120}),
         ("moneyflow_hsgt", {"limit": 10}),
         ("fina_indicator", {"ts_code": "000001.SZ", "limit": 8}),
         ("income", {"ts_code": "000001.SZ", "limit": 8}),

@@ -10,6 +10,7 @@ from tushare_local_mcp.tools import (
     get_index_realtime,
     get_moneyflow,
     get_realtime,
+    get_rt_min,
     get_stock_basic,
     health_check,
     stock_daily,
@@ -68,6 +69,9 @@ async def test_market_tools_delegate_to_client_methods():
         async def realtime(self, ts_code):
             return {"ts_code": ts_code, "price": 12.3}
 
+        async def rt_min(self, ts_code, freq, limit):
+            return [{"ts_code": ts_code, "freq": freq, "limit": limit}]
+
         async def daily_bars(self, ts_code, bars):
             return [{"ts_code": ts_code, "bars": bars}]
 
@@ -90,6 +94,25 @@ async def test_market_tools_delegate_to_client_methods():
     assert await get_index_daily("000001.SH", client_factory=lambda: fake) == [
         {"ts_code": "000001.SH", "bars": 60}
     ]
+    assert await get_rt_min("000001.SZ", client_factory=lambda: fake) == [
+        {"ts_code": "000001.SZ", "freq": 1, "limit": 1000}
+    ]
+
+
+@pytest.mark.asyncio
+async def test_rt_min_accepts_frequency_and_limit():
+    class FakeClient:
+        async def rt_min(self, ts_code, freq, limit):
+            return [{"ts_code": ts_code, "freq": freq, "limit": limit}]
+
+    result = await get_rt_min(
+        "000001.SZ,600000.SH",
+        freq=5,
+        limit=120,
+        client_factory=lambda: FakeClient(),
+    )
+
+    assert result == [{"ts_code": "000001.SZ,600000.SH", "freq": 5, "limit": 120}]
 
 
 @pytest.mark.asyncio
@@ -159,3 +182,16 @@ async def test_tool_functions_reject_non_positive_limits():
 
     with pytest.raises(ValueError, match="days must be greater than 0"):
         await get_moneyflow("000001.SZ", days=0, client_factory=lambda: FakeClient())
+
+
+@pytest.mark.asyncio
+async def test_rt_min_rejects_invalid_frequency_and_limit():
+    class FakeClient:
+        async def rt_min(self, ts_code, freq, limit):
+            return []
+
+    with pytest.raises(ValueError, match="freq must be between 1 and 60"):
+        await get_rt_min("000001.SZ", freq=61, client_factory=lambda: FakeClient())
+
+    with pytest.raises(ValueError, match="limit must be between 1 and 1000"):
+        await get_rt_min("000001.SZ", limit=1001, client_factory=lambda: FakeClient())

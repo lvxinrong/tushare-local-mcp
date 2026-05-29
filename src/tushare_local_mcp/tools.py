@@ -20,6 +20,14 @@ class DailyClient(Protocol):
     async def realtime(self, ts_code: str) -> dict[str, Any]:
         pass
 
+    async def rt_min(
+        self,
+        ts_code: str,
+        freq: int,
+        limit: int,
+    ) -> list[dict[str, Any]]:
+        pass
+
     async def daily_bars(self, ts_code: str, bars: int) -> list[dict[str, Any]]:
         pass
 
@@ -72,6 +80,12 @@ def _require_positive(value: int, field_name: str) -> int:
     return value
 
 
+def _require_between(value: int, field_name: str, minimum: int, maximum: int) -> int:
+    if value < minimum or value > maximum:
+        raise ValueError(f"{field_name} must be between {minimum} and {maximum}")
+    return value
+
+
 async def stock_daily(
     ts_code: str,
     start_date: str | None = None,
@@ -97,6 +111,19 @@ async def get_realtime(
 ) -> dict[str, Any]:
     ts_code = _require_code(ts_code, "ts_code")
     return await client_factory().realtime(ts_code)
+
+
+async def get_rt_min(
+    ts_code: str,
+    freq: int = 1,
+    limit: int = 1000,
+    *,
+    client_factory: Callable[[], DailyClient],
+) -> list[dict[str, Any]]:
+    ts_code = _require_code(ts_code, "ts_code")
+    freq = _require_between(freq, "freq", 1, 60)
+    limit = _require_between(limit, "limit", 1, 1000)
+    return await client_factory().rt_min(ts_code, freq, limit)
 
 
 async def get_daily(
@@ -182,6 +209,7 @@ async def get_stock_basic(
 
 
 GET_REALTIME_IMPL = get_realtime
+GET_RT_MIN_IMPL = get_rt_min
 GET_DAILY_IMPL = get_daily
 GET_INDEX_REALTIME_IMPL = get_index_realtime
 GET_INDEX_DAILY_IMPL = get_index_daily
@@ -208,6 +236,20 @@ def register_tools(
         """Fetch realtime quote for a stock."""
         return await GET_REALTIME_IMPL(
             ts_code,
+            client_factory=client_factory,
+        )
+
+    @mcp.tool()
+    async def get_rt_min(
+        ts_code: str,
+        freq: int = 1,
+        limit: int = 1000,
+    ) -> list[dict[str, Any]]:
+        """Fetch realtime minute bars for A-share stocks, from 1min to 60min."""
+        return await GET_RT_MIN_IMPL(
+            ts_code,
+            freq,
+            limit,
             client_factory=client_factory,
         )
 
