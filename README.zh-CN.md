@@ -177,6 +177,52 @@ TUSHARE_MCP_TRANSPORT=stdio uv run tushare-local-mcp
 
 - `get_stock_daily(ts_code: str, start_date: str | None = None, end_date: str | None = None) -> list[dict]`
 
+### 打板专题接口
+
+打板专题工具与 Tushare 官方打板专题 API 名称保持一致。每个工具都接收一个可选
+`params` 对象，并将其作为官方接口参数透传给 Tushare。
+
+示例：
+
+```json
+{
+  "name": "limit_list_d",
+  "arguments": {
+    "params": {
+      "trade_date": "20260529",
+      "limit_type": "U"
+    }
+  }
+}
+```
+
+已支持工具：
+
+- `top_list`
+- `top_inst`
+- `limit_list_ths`
+- `limit_list_d`
+- `limit_step`
+- `limit_cpt_list`
+- `ths_index`
+- `ths_daily`
+- `ths_member`
+- `dc_index`
+- `dc_member`
+- `dc_daily`
+- `stking`
+- `hm_list`
+- `hm_detail`
+- `hot_list`
+- `dc_hot`
+- `tdx_index`
+- `tdx_member`
+- `tdx_daily`
+- `kpl_list`
+- `kpl_concept_cons`
+- `dc_theme`
+- `dc_theme_cons`
+
 ## 开发
 
 ```bash

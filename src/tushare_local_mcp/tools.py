@@ -60,6 +60,13 @@ class DailyClient(Protocol):
     async def stock_basic(self, ts_code: str) -> dict[str, Any]:
         pass
 
+    async def query_api(
+        self,
+        api_name: str,
+        params: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        pass
+
 
 def health_check(settings: Settings) -> dict[str, Any]:
     return {
@@ -95,6 +102,12 @@ def _require_choice(value: str, field_name: str, choices: set[str]) -> str:
         allowed = ", ".join(sorted(choices))
         raise ValueError(f"{field_name} must be one of: {allowed}")
     return normalized
+
+
+def _clean_params(params: dict[str, Any] | None) -> dict[str, Any]:
+    if not params:
+        return {}
+    return {key: value for key, value in params.items() if value is not None}
 
 
 async def stock_daily(
@@ -213,6 +226,17 @@ async def get_stock_basic(
     return await client_factory().stock_basic(ts_code)
 
 
+async def query_board_tool(
+    api_name: str,
+    params: dict[str, Any] | None = None,
+    *,
+    client_factory: Callable[[], DailyClient],
+) -> list[dict[str, Any]]:
+    if api_name not in BOARD_TOOL_NAMES:
+        raise ValueError(f"Unsupported board tool: {api_name}")
+    return await client_factory().query_api(api_name, _clean_params(params))
+
+
 GET_REALTIME_IMPL = get_realtime
 GET_RT_MIN_IMPL = get_rt_min
 GET_DAILY_IMPL = get_daily
@@ -225,6 +249,33 @@ GET_INCOME_IMPL = get_income
 GET_STOCK_BASIC_IMPL = get_stock_basic
 
 RT_MIN_FREQS = {"1MIN", "5MIN", "15MIN", "30MIN", "60MIN"}
+
+BOARD_TOOL_NAMES = (
+    "top_list",
+    "top_inst",
+    "limit_list_ths",
+    "limit_list_d",
+    "limit_step",
+    "limit_cpt_list",
+    "ths_index",
+    "ths_daily",
+    "ths_member",
+    "dc_index",
+    "dc_member",
+    "dc_daily",
+    "stking",
+    "hm_list",
+    "hm_detail",
+    "hot_list",
+    "dc_hot",
+    "tdx_index",
+    "tdx_member",
+    "tdx_daily",
+    "kpl_list",
+    "kpl_concept_cons",
+    "dc_theme",
+    "dc_theme_cons",
+)
 
 
 def register_tools(
@@ -354,3 +405,31 @@ def register_tools(
             end_date,
             client_factory=client_factory,
         )
+
+    for api_name in BOARD_TOOL_NAMES:
+        _register_board_tool(mcp, api_name, client_factory=client_factory)
+
+
+def _register_board_tool(
+    mcp: FastMCP,
+    api_name: str,
+    *,
+    client_factory: Callable[[], DailyClient],
+) -> None:
+    async def board_tool(params: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+        return await query_board_tool(
+            api_name,
+            params,
+            client_factory=client_factory,
+        )
+
+    board_tool.__name__ = api_name
+    board_tool.__doc__ = (
+        f"Query Tushare board topic API `{api_name}`. "
+        "Pass official Tushare parameters in `params`."
+    )
+    mcp.add_tool(
+        board_tool,
+        name=api_name,
+        description=board_tool.__doc__,
+    )

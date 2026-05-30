@@ -92,6 +92,17 @@ class TushareClient:
         )
         return self._pick(rows[0], STOCK_BASIC_FIELDS) if rows else {}
 
+    async def query_api(
+        self,
+        api_name: str,
+        params: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        return await self._safe_list(
+            self._query_sync,
+            api_name,
+            _clean_params(params or {}),
+        )
+
     async def _safe_list(
         self,
         func: Callable[..., list[dict[str, Any]]],
@@ -403,6 +414,10 @@ def _pct_change(value: int | float, base: int | float) -> int | float:
 
 def _is_missing(value: Any) -> bool:
     return value is None or (isinstance(value, float) and math.isnan(value))
+
+
+def _clean_params(params: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in params.items() if value is not None}
 
 
 def _date_window(days: int) -> tuple[str, str]:

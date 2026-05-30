@@ -184,6 +184,52 @@ rows per request. `ts_code` can contain multiple comma-separated stock codes.
 
 - `get_stock_daily(ts_code: str, start_date: str | None = None, end_date: str | None = None) -> list[dict]`
 
+### Board Topic APIs
+
+The board-topic tools mirror Tushare's official board-topic APIs. Each tool
+accepts one optional `params` object and passes it to the matching Tushare API.
+
+Example:
+
+```json
+{
+  "name": "limit_list_d",
+  "arguments": {
+    "params": {
+      "trade_date": "20260529",
+      "limit_type": "U"
+    }
+  }
+}
+```
+
+Available tools:
+
+- `top_list`
+- `top_inst`
+- `limit_list_ths`
+- `limit_list_d`
+- `limit_step`
+- `limit_cpt_list`
+- `ths_index`
+- `ths_daily`
+- `ths_member`
+- `dc_index`
+- `dc_member`
+- `dc_daily`
+- `stking`
+- `hm_list`
+- `hm_detail`
+- `hot_list`
+- `dc_hot`
+- `tdx_index`
+- `tdx_member`
+- `tdx_daily`
+- `kpl_list`
+- `kpl_concept_cons`
+- `dc_theme`
+- `dc_theme_cons`
+
 ## Development
 
 ```bash

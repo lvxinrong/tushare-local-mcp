@@ -8,6 +8,8 @@
 - Change `get_rt_min` `freq` to string values such as `"1MIN"` and `"5MIN"`.
 - Change `get_stock_daily` to return a plain list of daily rows.
 - Return empty `{}` or `[]` from the Tushare adapter when API calls fail.
+- Add all board-topic APIs from the Tushare board-topic documentation as MCP
+  tools with official API names.
 
 ## 0.1.0
 
